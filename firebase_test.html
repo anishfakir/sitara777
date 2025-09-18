@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - Sitara777</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #8B0000, #A52A2A);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .data-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .data-section h3 {
+            margin-top: 0;
+            color: #8B0000;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #8B0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #A52A2A;
+        }
+        .game-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .game-card.active {
+            border-color: #28a745;
+            background: #f0fff0;
+        }
+        .game-card.inactive {
+            border-color: #dc3545;
+            background: #fff0f0;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge.active {
+            background: #28a745;
+            color: white;
+        }
+        .badge.inactive {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Firebase Connection Test</h1>
+            <p>Sitara777 Database Diagnostics</p>
+        </div>
+
+        <div id="status" class="status loading">
+            🔄 Initializing Firebase connection...
+        </div>
+
+        <div class="data-section">
+            <h3>🏪 Bazaars Data</h3>
+            <button onclick="testConnection()">🔄 Refresh Data</button>
+            <button onclick="addSampleData()">➕ Add Sample Data</button>
+            <div id="bazaarsData">Loading...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>🎮 Games Data</h3>
+            <div id="gamesData">Loading...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>🔍 Raw Database Structure</h3>
+            <div id="rawData">Loading...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>📊 Connection Details</h3>
+            <div id="connectionInfo">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get, set, push, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCljdhqeNMMMZI73AgTpaDaBQW91jC3mrY",
+            authDomain: "sitara777-admin-api.firebaseapp.com",
+            databaseURL: "https://sitara777-admin-api-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sitara777-admin-api",
+            storageBucket: "sitara777-admin-api.firebasestorage.app",
+            messagingSenderId: "429791374831",
+            appId: "1:429791374831:android:e28272c99b6a4ba96c5a1a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Status elements
+        const statusEl = document.getElementById('status');
+        const bazaarsDataEl = document.getElementById('bazaarsData');
+        const gamesDataEl = document.getElementById('gamesData');
+        const rawDataEl = document.getElementById('rawData');
+        const connectionInfoEl = document.getElementById('connectionInfo');
+
+        // Show connection info
+        connectionInfoEl.innerHTML = `
+            <strong>Database URL:</strong> ${firebaseConfig.databaseURL}<br>
+            <strong>Project ID:</strong> ${firebaseConfig.projectId}<br>
+            <strong>App ID:</strong> ${firebaseConfig.appId}<br>
+            <strong>Status:</strong> <span style="color: green;">Connected ✅</span>
+        `;
+
+        // Test connection function
+        window.testConnection = async function() {
+            statusEl.className = 'status loading';
+            statusEl.innerHTML = '🔄 Testing Firebase connection...';
+
+            try {
+                // Test basic connection
+                const testRef = ref(database, 'test');
+                await set(testRef, { timestamp: Date.now(), test: 'connection' });
+                
+                statusEl.className = 'status success';
+                statusEl.innerHTML = '✅ Firebase connection successful!';
+
+                // Clean up test data
+                await set(testRef, null);
+
+                // Load data
+                await loadBazaarsData();
+                await loadGamesData();
+                await loadRawData();
+
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `❌ Firebase connection failed: ${error.message}`;
+                console.error('Firebase error:', error);
+            }
+        };
+
+        // Load bazaars data
+        async function loadBazaarsData() {
+            try {
+                const bazaarsRef = ref(database, 'bazaars');
+                const snapshot = await get(bazaarsRef);
+                
+                if (snapshot.exists()) {
+                    const bazaars = snapshot.val();
+                    const bazaarCount = Object.keys(bazaars).length;
+                    
+                    let html = `<div style="margin-bottom: 15px;"><strong>Total Bazaars Found: ${bazaarCount}</strong></div>`;
+                    
+                    Object.entries(bazaars).forEach(([bazaarId, bazaarData]) => {
+                        const isActive = bazaarData.isActive || false;
+                        html += `
+                            <div class="game-card ${isActive ? 'active' : 'inactive'}">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                                    <h4 style="margin: 0;">${bazaarData.displayName || bazaarData.name || bazaarId}</h4>
+                                    <span class="badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                                </div>
+                                <p><strong>ID:</strong> ${bazaarId}</p>
+                                <p><strong>Description:</strong> ${bazaarData.description || 'N/A'}</p>
+                                <p><strong>Sort Order:</strong> ${bazaarData.sortOrder || 0}</p>
+                                <p><strong>Game Count:</strong> ${bazaarData.gameIds ? bazaarData.gameIds.length : 0}</p>
+                                <details>
+                                    <summary>Raw Data</summary>
+                                    <pre>${JSON.stringify(bazaarData, null, 2)}</pre>
+                                </details>
+                            </div>
+                        `;
+                    });
+                    
+                    bazaarsDataEl.innerHTML = html;
+                } else {
+                    bazaarsDataEl.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <h3>🏪 No Bazaars Found</h3>
+                            <p>The bazaars collection is empty. Click "Add Sample Data" to add test data.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                bazaarsDataEl.innerHTML = `<div class="status error">Error loading bazaars: ${error.message}</div>`;
+            }
+        }
+
+        // Load games data
+        async function loadGamesData() {
+            try {
+                const gamesRef = ref(database, 'games');
+                const snapshot = await get(gamesRef);
+                
+                if (snapshot.exists()) {
+                    const games = snapshot.val();
+                    const gameCount = Object.keys(games).length;
+                    
+                    let html = `<div style="margin-bottom: 15px;"><strong>Total Games Found: ${gameCount}</strong></div>`;
+                    
+                    Object.entries(games).forEach(([gameId, gameData]) => {
+                        const isActive = gameData.isActive || false;
+                        html += `
+                            <div class="game-card ${isActive ? 'active' : 'inactive'}">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                                    <h4 style="margin: 0;">${gameData.displayName || gameData.name || gameId}</h4>
+                                    <span class="badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                                </div>
+                                <p><strong>ID:</strong> ${gameId}</p>
+                                <p><strong>Description:</strong> ${gameData.description || 'N/A'}</p>
+                                <p><strong>Open Time:</strong> ${gameData.openTime || 'N/A'}</p>
+                                <p><strong>Close Time:</strong> ${gameData.closeTime || 'N/A'}</p>
+                                <p><strong>Result Time:</strong> ${gameData.resultTime || 'N/A'}</p>
+                                <p><strong>Type:</strong> ${gameData.type || 'N/A'}</p>
+                                <details>
+                                    <summary>Raw Data</summary>
+                                    <pre>${JSON.stringify(gameData, null, 2)}</pre>
+                                </details>
+                            </div>
+                        `;
+                    });
+                    
+                    gamesDataEl.innerHTML = html;
+                } else {
+                    gamesDataEl.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <h3>📭 No Games Found</h3>
+                            <p>The games collection is empty. Click "Add Sample Games" to add test data.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                gamesDataEl.innerHTML = `<div class="status error">Error loading games: ${error.message}</div>`;
+            }
+        }
+
+        // Load raw database structure
+        async function loadRawData() {
+            try {
+                const rootRef = ref(database);
+                const snapshot = await get(rootRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const structure = {};
+                    
+                    Object.keys(data).forEach(key => {
+                        if (typeof data[key] === 'object' && data[key] !== null) {
+                            structure[key] = `${Object.keys(data[key]).length} items`;
+                        } else {
+                            structure[key] = typeof data[key];
+                        }
+                    });
+                    
+                    rawDataEl.innerHTML = `
+                        <h4>Database Root Structure:</h4>
+                        <pre>${JSON.stringify(structure, null, 2)}</pre>
+                        <details>
+                            <summary>Full Raw Data (Click to expand)</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    rawDataEl.innerHTML = '<p>Database is empty</p>';
+                }
+            } catch (error) {
+                rawDataEl.innerHTML = `<div class="status error">Error loading raw data: ${error.message}</div>`;
+            }
+        }
+
+        // Add sample data with hierarchy
+        window.addSampleData = async function() {
+            statusEl.className = 'status loading';
+            statusEl.innerHTML = '🔄 Adding sample bazaars and games...';
+
+            try {
+                // Add Bazaars first
+                const bazaarsRef = ref(database, 'bazaars');
+                const sampleBazaars = {
+                    'bazaar_main': {
+                        name: 'main_bazaar',
+                        displayName: 'Main Bazaar',
+                        description: 'The main betting bazaar with popular games',
+                        icon: 'assets/icons/main_bazaar.png',
+                        banner: 'assets/banners/main_bazaar.png',
+                        isActive: true,
+                        sortOrder: 1,
+                        gameIds: ['game_delhi_bazaar', 'game_mumbai_bazaar'],
+                        settings: {},
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'system'
+                    },
+                    'bazaar_premium': {
+                        name: 'premium_bazaar',
+                        displayName: 'Premium Bazaar',
+                        description: 'High-stakes premium gaming experience',
+                        icon: 'assets/icons/premium_bazaar.png',
+                        banner: 'assets/banners/premium_bazaar.png',
+                        isActive: true,
+                        sortOrder: 2,
+                        gameIds: ['game_kolkata_bazaar'],
+                        settings: {},
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'system'
+                    }
+                };
+
+                await set(bazaarsRef, sampleBazaars);
+                console.log('✅ Bazaars created successfully');
+
+                // Add Games with bazaar references
+                const gamesRef = ref(database, 'games');
+                const sampleGames = {
+                    'game_delhi_bazaar': {
+                        name: 'delhi_bazaar',
+                        displayName: 'Delhi Bazaar',
+                        description: 'Classic Delhi Bazaar matka game',
+                        type: 'matka',
+                        category: 'bazaar',
+                        bazaarId: 'bazaar_main',
+                        icon: 'assets/icons/delhi.png',
+                        banner: 'assets/banners/delhi_banner.png',
+                        isActive: true,
+                        openTime: '10:00',
+                        closeTime: '11:00',
+                        resultTime: '11:30',
+                        betTypes: {
+                            single: {
+                                name: 'single',
+                                displayName: 'Single',
+                                minBet: 10,
+                                maxBet: 1000,
+                                winMultiplier: 9.5,
+                                isActive: true
+                            },
+                            jodi: {
+                                name: 'jodi',
+                                displayName: 'Jodi',
+                                minBet: 10,
+                                maxBet: 1000,
+                                winMultiplier: 95.0,
+                                isActive: true
+                            }
+                        },
+                        rates: {
+                            single: 9.5,
+                            jodi: 95.0,
+                            patti: 950.0,
+                            halfSangam: 1000.0,
+                            fullSangam: 10000.0
+                        },
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'system'
+                    },
+                    'game_mumbai_bazaar': {
+                        name: 'mumbai_bazaar',
+                        displayName: 'Mumbai Bazaar',
+                        description: 'Popular Mumbai Bazaar matka game',
+                        type: 'matka',
+                        category: 'bazaar',
+                        bazaarId: 'bazaar_main',
+                        icon: 'assets/icons/mumbai.png',
+                        banner: 'assets/banners/mumbai_banner.png',
+                        isActive: true,
+                        openTime: '12:00',
+                        closeTime: '13:00',
+                        resultTime: '13:30',
+                        betTypes: {
+                            single: {
+                                name: 'single',
+                                displayName: 'Single',
+                                minBet: 10,
+                                maxBet: 2000,
+                                winMultiplier: 9.5,
+                                isActive: true
+                            }
+                        },
+                        rates: {
+                            single: 9.5,
+                            jodi: 95.0,
+                            patti: 950.0,
+                            halfSangam: 1000.0,
+                            fullSangam: 10000.0
+                        },
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'system'
+                    },
+                    'game_kolkata_bazaar': {
+                        name: 'kolkata_bazaar',
+                        displayName: 'Kolkata Bazaar',
+                        description: 'Traditional Kolkata Bazaar game',
+                        type: 'matka',
+                        category: 'bazaar',
+                        bazaarId: 'bazaar_premium',
+                        icon: 'assets/icons/kolkata.png',
+                        banner: 'assets/banners/kolkata_banner.png',
+                        isActive: true, // Changed to active
+                        openTime: '14:00',
+                        closeTime: '15:00',
+                        resultTime: '15:30',
+                        betTypes: {
+                            single: {
+                                name: 'single',
+                                displayName: 'Single',
+                                minBet: 5,
+                                maxBet: 500,
+                                winMultiplier: 9.5,
+                                isActive: true
+                            }
+                        },
+                        rates: {
+                            single: 9.5,
+                            jodi: 95.0,
+                            patti: 950.0,
+                            halfSangam: 1000.0,
+                            fullSangam: 10000.0
+                        },
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'system'
+                    }
+                };
+
+                // Add all sample games
+                await set(gamesRef, sampleGames);
+
+                statusEl.className = 'status success';
+                statusEl.innerHTML = '✅ Sample bazaars and games added successfully!';
+
+                // Reload data
+                await loadBazaarsData();
+                await loadGamesData();
+                await loadRawData();
+
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `❌ Failed to add sample games: ${error.message}`;
+                console.error('Error adding sample games:', error);
+            }
+        };
+
+        // Initialize on page load
+        testConnection();
+    </script>
+</body>
+</html>

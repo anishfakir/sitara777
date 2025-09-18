@@ -1,0 +1,4 @@
+# Temporary file to store the updated bazaar screen code
+1. Replace all AppTheme.primaryColor with AppColors.primary
+2. Replace other color references
+3. Update the UI components

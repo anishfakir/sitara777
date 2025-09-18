@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Debug Tool - Sitara777</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #8B0000, #A52A2A);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #8B0000;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        .button:hover {
+            background: #A52A2A;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .connected { background: #28a745; }
+        .disconnected { background: #dc3545; }
+        .loading { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Firebase Debug Tool</h1>
+        <p>Debug your Sitara777 Firebase connection and data structure</p>
+    </div>
+
+    <div class="container">
+        <h2>🔗 Connection Status</h2>
+        <div id="connectionStatus" class="status">
+            <div class="status-dot loading"></div>
+            <span>Checking connection...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎮 Games Data</h2>
+        <button class="button" onclick="loadGames()">📥 Load Games from Firebase</button>
+        <button class="button" onclick="addSampleGame()">➕ Add Sample Game</button>
+        <button class="button" onclick="clearGames()">🗑️ Clear All Games</button>
+        <div id="gamesResult"></div>
+        <div id="gamesData" class="data-display" style="display:none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>👤 Users Data</h2>
+        <button class="button" onclick="loadUsers()">📥 Load Users from Firebase</button>
+        <div id="usersResult"></div>
+        <div id="usersData" class="data-display" style="display:none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Database Structure</h2>
+        <button class="button" onclick="loadFullStructure()">🔍 Show Full Database Structure</button>
+        <div id="structureResult"></div>
+        <div id="structureData" class="data-display" style="display:none;"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get, set, push, remove, onValue, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Your Firebase config - matches your Flutter app exactly
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAMRnkfwHwca2Nr0irw-VD0Zld5EbFqq9w',
+            appId: '1:429791374831:web:4c40138467bc41416c5a1a',
+            messagingSenderId: '429791374831',
+            projectId: 'sitara777-admin-api',
+            authDomain: 'sitara777-admin-api.firebaseapp.com',
+            databaseURL: 'https://sitara777-admin-api-default-rtdb.asia-southeast1.firebasedatabase.app',
+            storageBucket: 'sitara777-admin-api.firebasestorage.app',
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Check connection
+        const connectedRef = ref(database, '.info/connected');
+        onValue(connectedRef, (snapshot) => {
+            const connected = snapshot.val();
+            const statusElement = document.getElementById('connectionStatus');
+            if (connected) {
+                statusElement.innerHTML = '<div class="status-dot connected"></div><span>✅ Connected to Firebase</span>';
+            } else {
+                statusElement.innerHTML = '<div class="status-dot disconnected"></div><span>❌ Disconnected from Firebase</span>';
+            }
+        });
+
+        // Global functions
+        window.loadGames = async function() {
+            try {
+                const gamesRef = ref(database, 'games');
+                const snapshot = await get(gamesRef);
+                const result = document.getElementById('gamesResult');
+                const dataDisplay = document.getElementById('gamesData');
+                
+                if (snapshot.exists()) {
+                    const games = snapshot.val();
+                    const gameCount = Object.keys(games).length;
+                    result.innerHTML = `<div class="success">✅ Found ${gameCount} games in Firebase</div>`;
+                    dataDisplay.textContent = JSON.stringify(games, null, 2);
+                    dataDisplay.style.display = 'block';
+                } else {
+                    result.innerHTML = '<div class="error">❌ No games found in Firebase database</div>';
+                    dataDisplay.style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('gamesResult').innerHTML = `<div class="error">❌ Error loading games: ${error.message}</div>`;
+            }
+        };
+
+        window.addSampleGame = async function() {
+            try {
+                const sampleGame = {
+                    name: 'test_game_' + Date.now(),
+                    displayName: 'Test Game ' + new Date().toLocaleTimeString(),
+                    description: 'Sample game for testing',
+                    openTime: '10:00 AM',
+                    closeTime: '11:00 PM',
+                    resultTime: '11:30 PM',
+                    isActive: true,
+                    isBettingOpen: true,
+                    minBetAmount: 10,
+                    maxBetAmount: 1000,
+                    betOptions: {
+                        single: { name: 'Single', payout: 9.5 },
+                        jodi: { name: 'Jodi', payout: 95 },
+                        panna: { name: 'Panna', payout: 142 }
+                    },
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdBy: 'debug_tool'
+                };
+
+                const gamesRef = ref(database, 'games');
+                const newGameRef = push(gamesRef);
+                await set(newGameRef, sampleGame);
+                
+                document.getElementById('gamesResult').innerHTML = '<div class="success">✅ Sample game added successfully!</div>';
+                loadGames(); // Reload games to show the new one
+            } catch (error) {
+                document.getElementById('gamesResult').innerHTML = `<div class="error">❌ Error adding sample game: ${error.message}</div>`;
+            }
+        };
+
+        window.clearGames = async function() {
+            if (!confirm('Are you sure you want to delete ALL games? This cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                const gamesRef = ref(database, 'games');
+                await remove(gamesRef);
+                document.getElementById('gamesResult').innerHTML = '<div class="success">✅ All games cleared from Firebase</div>';
+                document.getElementById('gamesData').style.display = 'none';
+            } catch (error) {
+                document.getElementById('gamesResult').innerHTML = `<div class="error">❌ Error clearing games: ${error.message}</div>`;
+            }
+        };
+
+        window.loadUsers = async function() {
+            try {
+                const usersRef = ref(database, 'users');
+                const snapshot = await get(usersRef);
+                const result = document.getElementById('usersResult');
+                const dataDisplay = document.getElementById('usersData');
+                
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const userCount = Object.keys(users).length;
+                    result.innerHTML = `<div class="success">✅ Found ${userCount} users in Firebase</div>`;
+                    dataDisplay.textContent = JSON.stringify(users, null, 2);
+                    dataDisplay.style.display = 'block';
+                } else {
+                    result.innerHTML = '<div class="error">❌ No users found in Firebase database</div>';
+                    dataDisplay.style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('usersResult').innerHTML = `<div class="error">❌ Error loading users: ${error.message}</div>`;
+            }
+        };
+
+        window.loadFullStructure = async function() {
+            try {
+                const rootRef = ref(database, '/');
+                const snapshot = await get(rootRef);
+                const result = document.getElementById('structureResult');
+                const dataDisplay = document.getElementById('structureData');
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const collections = Object.keys(data);
+                    result.innerHTML = `<div class="success">✅ Database collections: ${collections.join(', ')}</div>`;
+                    
+                    // Show structure overview
+                    const structure = {};
+                    collections.forEach(collection => {
+                        if (data[collection] && typeof data[collection] === 'object') {
+                            structure[collection] = {
+                                count: Object.keys(data[collection]).length,
+                                sample_keys: Object.keys(data[collection]).slice(0, 3)
+                            };
+                        }
+                    });
+                    
+                    dataDisplay.textContent = JSON.stringify(structure, null, 2);
+                    dataDisplay.style.display = 'block';
+                } else {
+                    result.innerHTML = '<div class="error">❌ Database is empty</div>';
+                    dataDisplay.style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('structureResult').innerHTML = `<div class="error">❌ Error loading structure: ${error.message}</div>`;
+            }
+        };
+
+        // Auto-load games on page load
+        window.addEventListener('load', function() {
+            loadGames();
+        });
+    </script>
+</body>
+</html>

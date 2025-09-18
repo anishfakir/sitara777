@@ -1,0 +1,70 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        
+        // Only authenticated users can write their profile
+        ".write": "$uid === auth.uid",
+        
+        // Validate user data structure
+        ".validate": "newData.hasChildren(['profile', 'wallet'])",
+        
+        "profile": {
+          ".validate": "newData.hasChildren(['name', 'phone'])",
+          "name": { ".validate": "newData.isString() && newData.val().length > 0" },
+          "phone": { ".validate": "newData.isString() && newData.val().matches(/^\\+?[1-9]\\d{9,14}$/)" }
+        },
+        
+        "wallet": {
+          ".validate": "newData.hasChildren(['balance'])",
+          "balance": { 
+            ".validate": "newData.isNumber() && newData.val() >= 0",
+            // Only allow balance updates through server functions
+            ".write": "auth.uid === 'server-function'"
+          }
+        }
+      }
+    },
+    
+    "games": {
+      ".read": "auth != null",
+      // Only admin can create/update games
+      ".write": "auth.token.admin === true",
+      
+      "$gameId": {
+        ".validate": "newData.hasChildren(['gameId', 'displayName', 'openTime', 'closeTime', 'resultTime', 'isBettingOpen'])",
+        "gameId": { ".validate": "newData.isString()" },
+        "displayName": { ".validate": "newData.isString()" },
+        "openTime": { ".validate": "newData.isString()" },
+        "closeTime": { ".validate": "newData.isString()" },
+        "resultTime": { ".validate": "newData.isString()" },
+        "isBettingOpen": { ".validate": "newData.isBoolean()" }
+      }
+    },
+    
+    "bets": {
+      // Users can read their own bets
+      ".read": "auth != null",
+      // Only allow new bets through transaction functions
+      ".write": "auth.uid === 'server-function' || !data.exists()",
+      
+      "$betId": {
+        ".validate": "newData.hasChildren(['userId', 'gameId', 'amount', 'number', 'timestamp', 'status'])",
+        "userId": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+        "gameId": { ".validate": "newData.isString()" },
+        "amount": { 
+          ".validate": "newData.isNumber() && newData.val() >= 10 && newData.val() <= 10000"
+        },
+        "number": { ".validate": "newData.isString()" },
+        "timestamp": { ".validate": "newData.isString()" },
+        "status": { 
+          ".validate": "newData.isString() && newData.val().matches(/^(pending|completed|cancelled)$/)"
+        }
+      }
+    }
+  }
+}

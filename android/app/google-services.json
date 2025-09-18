@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "429791374831",
+    "firebase_url": "https://sitara777-admin-api-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "sitara777-admin-api",
+    "storage_bucket": "sitara777-admin-api.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429791374831:android:e28272c99b6a4ba96c5a1a",
+        "android_client_info": {
+          "package_name": "com.sitara777.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCljdhqeNMMMZI73AgTpaDaBQW91jC3mrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

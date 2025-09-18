@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Structure Analyzer - Sitara777</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #8B0000, #A52A2A);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(139,0,0,0.3);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .button {
+            background: linear-gradient(135deg, #8B0000, #A52A2A);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139,0,0,0.3);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139,0,0,0.4);
+        }
+        .button:active {
+            transform: translateY(0);
+        }
+        .success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+        .error {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+        }
+        .warning {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #212529;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(255,193,7,0.3);
+        }
+        .data-display {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 15px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .connected { background: #28a745; }
+        .disconnected { background: #dc3545; }
+        .loading { background: #ffc107; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #8B0000;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #8B0000;
+        }
+        .field-mismatch {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .field-match {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: bold;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            color: #8B0000;
+            border-bottom: 3px solid #8B0000;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Firebase Structure Analyzer</h1>
+        <p>Analyze your Sitara777 database structure and identify integration issues</p>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="container">
+        <h2>🔗 Firebase Connection Status</h2>
+        <div id="connectionStatus" class="status">
+            <div class="status-dot loading"></div>
+            <span>Initializing Firebase connection...</span>
+        </div>
+        <button class="button" onclick="testConnection()">🔄 Test Connection</button>
+    </div>
+
+    <!-- Tabs for different analyses -->
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="tab" onclick="showTab('games')">🎮 Games Analysis</button>
+            <button class="tab" onclick="showTab('users')">👤 Users Analysis</button>
+            <button class="tab" onclick="showTab('bets')">🎲 Bets Analysis</button>
+            <button class="tab" onclick="showTab('mismatches')">⚠️ Mismatches</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <h2>📊 Database Overview</h2>
+            <button class="button" onclick="analyzeDatabase()">🔍 Analyze Complete Database</button>
+            <div id="overviewResult"></div>
+            <div class="grid" id="overviewGrid"></div>
+        </div>
+
+        <!-- Games Tab -->
+        <div id="games" class="tab-content">
+            <h2>🎮 Games Structure Analysis</h2>
+            <button class="button" onclick="analyzeGames()">🔍 Analyze Games</button>
+            <div id="gamesResult"></div>
+            <div id="gamesStructure" class="data-display" style="display:none;"></div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="users" class="tab-content">
+            <h2>👤 Users Structure Analysis</h2>
+            <button class="button" onclick="analyzeUsers()">🔍 Analyze Users</button>
+            <div id="usersResult"></div>
+            <div id="usersStructure" class="data-display" style="display:none;"></div>
+        </div>
+
+        <!-- Bets Tab -->
+        <div id="bets" class="tab-content">
+            <h2>🎲 Bets Structure Analysis</h2>
+            <button class="button" onclick="analyzeBets()">🔍 Analyze Bets</button>
+            <div id="betsResult"></div>
+            <div id="betsStructure" class="data-display" style="display:none;"></div>
+        </div>
+
+        <!-- Mismatches Tab -->
+        <div id="mismatches" class="tab-content">
+            <h2>⚠️ Field Mismatches & Recommendations</h2>
+            <button class="button" onclick="findMismatches()">🔍 Find All Mismatches</button>
+            <div id="mismatchesResult"></div>
+        </div>
+    </div>
+
+    <!-- Expected vs Actual Structure -->
+    <div class="container">
+        <h2>📋 Expected Flutter Model Structure</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>🎮 Game Model Expected Fields</h3>
+                <div class="data-display" style="max-height: 300px;">
+gameId (string) - Primary key
+name (string) - Internal name
+displayName (string) - Display name
+description (string) - Game description
+type (string) - matka/casino/lottery
+category (string) - Game category
+bazaarId (string) - Parent bazaar reference
+icon (string) - Icon URL
+banner (string) - Banner URL
+isActive (boolean) - Active status
+openTime (string) - Opening time
+closeTime (string) - Closing time
+resultTime (string) - Result time
+betTypes (object) - Available bet types
+rates (object) - Payout rates
+createdAt (timestamp) - Creation time
+updatedAt (timestamp) - Last update
+createdBy (string) - Creator
+result (string) - Game result
+resultDeclaredAt (timestamp) - Result time
+                </div>
+            </div>
+            <div class="card">
+                <h3>👤 User Model Expected Fields</h3>
+                <div class="data-display" style="max-height: 300px;">
+profile (object):
+  - uid (string)
+  - name (string)
+  - phone (string)
+  - email (string)
+  - avatar (string)
+  - createdAt (timestamp)
+  - lastLogin (timestamp)
+  - isActive (boolean)
+  
+wallet (object):
+  - balance (number)
+  - totalDeposited (number)
+  - totalWithdrawn (number)
+  - totalWinnings (number)
+  - totalLosses (number)
+  - lastUpdated (timestamp)
+  
+bids (object) - User bets
+transactions (object) - User transactions
+settings (object) - User preferences
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get, set, push, remove, onValue, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase config matching your Flutter app
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAMRnkfwHwca2Nr0irw-VD0Zld5EbFqq9w',
+            appId: '1:429791374831:web:4c40138467bc41416c5a1a',
+            messagingSenderId: '429791374831',
+            projectId: 'sitara777-admin-api',
+            authDomain: 'sitara777-admin-api.firebaseapp.com',
+            databaseURL: 'https://sitara777-admin-api-default-rtdb.asia-southeast1.firebasedatabase.app',
+            storageBucket: 'sitara777-admin-api.firebasestorage.app',
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Global variables
+        let currentData = {};
+
+        // Check connection
+        const connectedRef = ref(database, '.info/connected');
+        onValue(connectedRef, (snapshot) => {
+            const connected = snapshot.val();
+            const statusElement = document.getElementById('connectionStatus');
+            if (connected) {
+                statusElement.innerHTML = '<div class="status-dot connected"></div><span>✅ Connected to Firebase (Asia Southeast)</span>';
+            } else {
+                statusElement.innerHTML = '<div class="status-dot disconnected"></div><span>❌ Disconnected from Firebase</span>';
+            }
+        });
+
+        // Tab functionality
+        window.showTab = function(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        // Test connection
+        window.testConnection = async function() {
+            try {
+                const snapshot = await get(ref(database, '.info/connected'));
+                const connected = snapshot.val();
+                const statusElement = document.getElementById('connectionStatus');
+                
+                if (connected) {
+                    statusElement.innerHTML = '<div class="success">✅ Connection test successful! Firebase is connected.</div>';
+                } else {
+                    statusElement.innerHTML = '<div class="error">❌ Connection test failed! Firebase is not connected.</div>';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = `<div class="error">❌ Connection error: ${error.message}</div>`;
+            }
+        };
+
+        // Analyze complete database
+        window.analyzeDatabase = async function() {
+            try {
+                document.getElementById('overviewResult').innerHTML = '<div class="loading">🔄 Analyzing database structure...</div>';
+                
+                const rootSnapshot = await get(ref(database, '/'));
+                const data = rootSnapshot.val() || {};
+                currentData = data;
+                
+                const collections = Object.keys(data);
+                let analysis = {
+                    totalCollections: collections.length,
+                    collections: {}
+                };
+                
+                for (const collection of collections) {
+                    if (data[collection] && typeof data[collection] === 'object') {
+                        const items = Object.keys(data[collection]);
+                        analysis.collections[collection] = {
+                            count: items.length,
+                            sampleKeys: items.slice(0, 3),
+                            structure: getSampleStructure(data[collection][items[0]])
+                        };
+                    }
+                }
+                
+                displayOverview(analysis);
+                
+            } catch (error) {
+                document.getElementById('overviewResult').innerHTML = `<div class="error">❌ Error analyzing database: ${error.message}</div>`;
+            }
+        };
+
+        function getSampleStructure(obj) {
+            if (!obj || typeof obj !== 'object') return 'primitive';
+            
+            const structure = {};
+            Object.keys(obj).forEach(key => {
+                const value = obj[key];
+                if (typeof value === 'object' && value !== null) {
+                    structure[key] = Array.isArray(value) ? 'array' : 'object';
+                } else {
+                    structure[key] = typeof value;
+                }
+            });
+            return structure;
+        }
+
+        function displayOverview(analysis) {
+            const result = document.getElementById('overviewResult');
+            const grid = document.getElementById('overviewGrid');
+            
+            result.innerHTML = `<div class="success">✅ Database analysis complete! Found ${analysis.totalCollections} collections.</div>`;
+            
+            let gridHTML = '';
+            Object.keys(analysis.collections).forEach(collection => {
+                const data = analysis.collections[collection];
+                gridHTML += `
+                    <div class="card">
+                        <h3>📊 ${collection.charAt(0).toUpperCase() + collection.slice(1)}</h3>
+                        <p><strong>Count:</strong> ${data.count}</p>
+                        <p><strong>Sample Keys:</strong> ${data.sampleKeys.join(', ')}</p>
+                        <p><strong>Structure:</strong></p>
+                        <div class="data-display" style="max-height: 150px;">
+${JSON.stringify(data.structure, null, 2)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = gridHTML;
+        }
+
+        // Analyze games specifically
+        window.analyzeGames = async function() {
+            try {
+                document.getElementById('gamesResult').innerHTML = '<div class="loading">🔄 Analyzing games structure...</div>';
+                
+                const gamesSnapshot = await get(ref(database, 'games'));
+                
+                if (!gamesSnapshot.exists()) {
+                    document.getElementById('gamesResult').innerHTML = '<div class="warning">⚠️ No games found in database!</div>';
+                    return;
+                }
+                
+                const games = gamesSnapshot.val();
+                const gameKeys = Object.keys(games);
+                const sampleGame = games[gameKeys[0]];
+                
+                // Expected fields for games
+                const expectedFields = [
+                    'name', 'displayName', 'description', 'type', 'category',
+                    'isActive', 'openTime', 'closeTime', 'resultTime',
+                    'betTypes', 'rates', 'createdAt', 'updatedAt', 'createdBy'
+                ];
+                
+                const actualFields = Object.keys(sampleGame);
+                const analysis = analyzeFieldMismatch('Games', expectedFields, actualFields, sampleGame);
+                
+                document.getElementById('gamesResult').innerHTML = analysis.html;
+                document.getElementById('gamesStructure').innerHTML = JSON.stringify(sampleGame, null, 2);
+                document.getElementById('gamesStructure').style.display = 'block';
+                
+            } catch (error) {
+                document.getElementById('gamesResult').innerHTML = `<div class="error">❌ Error analyzing games: ${error.message}</div>`;
+            }
+        };
+
+        // Analyze users specifically
+        window.analyzeUsers = async function() {
+            try {
+                document.getElementById('usersResult').innerHTML = '<div class="loading">🔄 Analyzing users structure...</div>';
+                
+                const usersSnapshot = await get(ref(database, 'users'));
+                
+                if (!usersSnapshot.exists()) {
+                    document.getElementById('usersResult').innerHTML = '<div class="warning">⚠️ No users found in database!</div>';
+                    return;
+                }
+                
+                const users = usersSnapshot.val();
+                const userKeys = Object.keys(users);
+                const sampleUser = users[userKeys[0]];
+                
+                // Expected structure for users
+                const expectedStructure = ['profile', 'wallet', 'bids', 'transactions', 'settings'];
+                const actualFields = Object.keys(sampleUser);
+                const analysis = analyzeFieldMismatch('Users', expectedStructure, actualFields, sampleUser);
+                
+                document.getElementById('usersResult').innerHTML = analysis.html;
+                document.getElementById('usersStructure').innerHTML = JSON.stringify(sampleUser, null, 2);
+                document.getElementById('usersStructure').style.display = 'block';
+                
+            } catch (error) {
+                document.getElementById('usersResult').innerHTML = `<div class="error">❌ Error analyzing users: ${error.message}</div>`;
+            }
+        };
+
+        // Analyze bets specifically
+        window.analyzeBets = async function() {
+            try {
+                document.getElementById('betsResult').innerHTML = '<div class="loading">🔄 Analyzing bets structure...</div>';
+                
+                const betsSnapshot = await get(ref(database, 'bets'));
+                
+                if (!betsSnapshot.exists()) {
+                    document.getElementById('betsResult').innerHTML = '<div class="warning">⚠️ No bets found in database!</div>';
+                    return;
+                }
+                
+                const bets = betsSnapshot.val();
+                const betKeys = Object.keys(bets);
+                const sampleBet = bets[betKeys[0]];
+                
+                // Expected fields for bets
+                const expectedFields = [
+                    'id', 'userId', 'gameId', 'gameName', 'betTypeId', 'betTypeName',
+                    'amount', 'betNumber', 'placedAt', 'status', 'winAmount', 'result'
+                ];
+                
+                const actualFields = Object.keys(sampleBet);
+                const analysis = analyzeFieldMismatch('Bets', expectedFields, actualFields, sampleBet);
+                
+                document.getElementById('betsResult').innerHTML = analysis.html;
+                document.getElementById('betsStructure').innerHTML = JSON.stringify(sampleBet, null, 2);
+                document.getElementById('betsStructure').style.display = 'block';
+                
+            } catch (error) {
+                document.getElementById('betsResult').innerHTML = `<div class="error">❌ Error analyzing bets: ${error.message}</div>`;
+            }
+        };
+
+        function analyzeFieldMismatch(entityName, expected, actual, sampleData) {
+            let html = `<div class="success">✅ ${entityName} analysis complete!</div>`;
+            html += `<p><strong>Expected fields:</strong> ${expected.length} | <strong>Actual fields:</strong> ${actual.length}</p>`;
+            
+            const missing = expected.filter(field => !actual.includes(field));
+            const extra = actual.filter(field => !expected.includes(field));
+            const matching = expected.filter(field => actual.includes(field));
+            
+            if (missing.length > 0) {
+                html += `<div class="field-mismatch"><strong>❌ Missing fields:</strong> ${missing.join(', ')}</div>`;
+            }
+            
+            if (extra.length > 0) {
+                html += `<div class="field-mismatch"><strong>➕ Extra fields:</strong> ${extra.join(', ')}</div>`;
+            }
+            
+            if (matching.length > 0) {
+                html += `<div class="field-match"><strong>✅ Matching fields:</strong> ${matching.join(', ')}</div>`;
+            }
+            
+            return { html, missing, extra, matching };
+        }
+
+        // Find all mismatches
+        window.findMismatches = async function() {
+            try {
+                document.getElementById('mismatchesResult').innerHTML = '<div class="loading">🔄 Finding all mismatches...</div>';
+                
+                let mismatches = [];
+                let recommendations = [];
+                
+                // Check games
+                const gamesSnapshot = await get(ref(database, 'games'));
+                if (gamesSnapshot.exists()) {
+                    const games = gamesSnapshot.val();
+                    const sampleGame = games[Object.keys(games)[0]];
+                    const gameFields = Object.keys(sampleGame);
+                    
+                    // Common field name issues
+                    if (gameFields.includes('game_name') && !gameFields.includes('displayName')) {
+                        mismatches.push('🎮 Games: Field "game_name" should be "displayName"');
+                        recommendations.push('Rename "game_name" to "displayName" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('open_time') && !gameFields.includes('openTime')) {
+                        mismatches.push('🎮 Games: Field "open_time" should be "openTime"');
+                        recommendations.push('Rename "open_time" to "openTime" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('close_time') && !gameFields.includes('closeTime')) {
+                        mismatches.push('🎮 Games: Field "close_time" should be "closeTime"');
+                        recommendations.push('Rename "close_time" to "closeTime" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('result_time') && !gameFields.includes('resultTime')) {
+                        mismatches.push('🎮 Games: Field "result_time" should be "resultTime"');
+                        recommendations.push('Rename "result_time" to "resultTime" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('is_active') && !gameFields.includes('isActive')) {
+                        mismatches.push('🎮 Games: Field "is_active" should be "isActive"');
+                        recommendations.push('Rename "is_active" to "isActive" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('created_at') && !gameFields.includes('createdAt')) {
+                        mismatches.push('🎮 Games: Field "created_at" should be "createdAt"');
+                        recommendations.push('Rename "created_at" to "createdAt" in admin panel');
+                    }
+                    
+                    if (gameFields.includes('updated_at') && !gameFields.includes('updatedAt')) {
+                        mismatches.push('🎮 Games: Field "updated_at" should be "updatedAt"');
+                        recommendations.push('Rename "updated_at" to "updatedAt" in admin panel');
+                    }
+                }
+                
+                // Display results
+                let html = '';
+                if (mismatches.length === 0) {
+                    html = '<div class="success">🎉 No field name mismatches found! Your admin panel and Flutter app are perfectly synchronized.</div>';
+                } else {
+                    html = `<div class="warning">⚠️ Found ${mismatches.length} potential mismatches:</div>`;
+                    mismatches.forEach(mismatch => {
+                        html += `<div class="field-mismatch">${mismatch}</div>`;
+                    });
+                    
+                    html += '<h3>🛠️ Recommendations:</h3>';
+                    recommendations.forEach(rec => {
+                        html += `<div class="field-match">✅ ${rec}</div>`;
+                    });
+                }
+                
+                document.getElementById('mismatchesResult').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('mismatchesResult').innerHTML = `<div class="error">❌ Error finding mismatches: ${error.message}</div>`;
+            }
+        };
+
+        // Auto-run overview analysis on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                analyzeDatabase();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
