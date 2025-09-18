@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Check</title>
+</head>
+<body>
+    <h1>Sitara777 Admin Frontend - Health Check</h1>
+    <p>Status: OK</p>
+    <p>API URL: <span id="api-url"></span></p>
+    <p>API Status: <span id="api-status">Checking...</span></p>
+    
+    <script>
+        document.getElementById('api-url').textContent = process.env.REACT_APP_API_URL || 'Not set';
+        
+        // Simple API health check
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-status').textContent = data.status === 'success' ? 'Connected' : 'Disconnected';
+                document.getElementById('api-status').style.color = data.status === 'success' ? 'green' : 'red';
+            })
+            .catch(error => {
+                document.getElementById('api-status').textContent = 'Error: ' + error.message;
+                document.getElementById('api-status').style.color = 'red';
+            });
+    </script>
+</body>
+</html>

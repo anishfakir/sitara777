@@ -11,6 +11,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,14 +26,18 @@ const Login = () => {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, we'll just navigate to dashboard
-      // In a real app, you would authenticate with the backend
-      navigate('/dashboard');
+      const data = await authAPI.login(email, password);
+
+      if (data.status === 'success') {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(data.message || 'Invalid credentials. Please try again.');
+      }
     } catch (err) {
-      setError('Invalid credentials. Please try again.');
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
